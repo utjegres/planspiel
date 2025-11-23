@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <title>Gesamtranking Rechner</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 20px;
+        }
+        h1 { text-align: center; }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .inputs-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1%;
+        }
+        .year-block {
+            width: 30%;
+            min-width: 280px;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+        }
+        .year-block h3 { margin-top: 0; }
+        textarea {
+            width: 100%;
+            height: 100px;
+            font-family: monospace;
+            box-sizing: border-box;
+            resize: vertical; /* Nutzer kann selbst vergrößern */
+        }
+        button {
+            padding: 10px 16px;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            color: white;
+        }
+        .calc-button {
+            background-color: #1d4ed8; /* blau */
+            margin-right: 10px;
+        }
+        .upload-button {
+            background-color: #333;
+        }
+        .clear-button {
+            background-color: #ef4444; /* rot */
+        }
+        .note { font-size: 13px; color: #555; margin-top: 8px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            box-shadow: 0 0 6px rgba(0,0,0,0.04);
+        }
+        th, td {
+            padding: 8px 10px;
+            border: 1px solid #e6e6e6;
+            text-align: left;
+        }
+        th { background: #fafafa; }
+
+        @media (max-width: 920px) {
+            .year-block { width: 49%; }
+        }
+        @media (max-width: 560px) {
+            .year-block { width: 100%; }
+        }
+	    .nav-button{background:#4f46e5;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:12px}
+        .upload-status {margin-top:8px;color:green;font-weight:bold;}
+        .upload-warning {margin-top:4px;color:#b45309;font-weight:bold;}
+    </style>
+</head>
+<body>
+    <h1>Gesamtranking aus allen Jahren</h1>
+
+    <a href="index.html" class="nav-button">← Zurück zur Hauptseite</a>  
+
+    <div class="controls">
+        <input type="file" id="fileInput" accept=".txt" style="display:none"/>
+        <button id="uploadBtn" class="upload-button">TXT hochladen</button>
+        <button id="clearBtn" class="clear-button">Alles löschen</button>
+        <button id="calcBtn" class="calc-button">Berechne Gesamtranking</button>
+        <div class="upload-status" id="uploadStatus"></div>
+        <div class="upload-warning" id="uploadWarning"></div>
+        <div class="note">Für jedes Jahr kannst du das wöchentliche Ranking (als Text, mit oder ohne Überschrift) einfügen oder per TXT-Datei hochladen.</div>
+    </div>
+
+    <div id="inputs" class="inputs-grid"></div>
+
+    <h2>Ergebnis</h2>
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th>Rang</th>
+                <th>Unternehmens-ID</th>
+                <th>Unternehmen (neuester Name)</th>
+                <th>Mittelwert ROI</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+<script>
+// Erzeuge 7 Eingabefelder für die Jahre 2000-2006
+const start = 2000;
+const inputsDiv = document.getElementById("inputs");
+for (let i = 0; i < 7; i++) {
+    const year = start + i;
+    const block = document.createElement('div');
+    block.className = 'year-block';
+    block.innerHTML = `
+        <h3>Jahr ${year}</h3>
+        <textarea id="year${year}" placeholder="Ranking Daten hier einfügen... (Rang\tFirma\tROI) mit oder ohne Überschrift"></textarea>
+    `;
+    inputsDiv.appendChild(block);
+}
+
+// Parser: nimmt die Zeilen und extrahiert ID, Name und ROI
+function parseRanking(text) {
+    if (!text) return [];
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) return [];
+
+    if (/^\s*rang\b.*firma\b.*roi\b/i.test(lines[0])) {
+        lines.shift();
+    }
+
+    const entries = [];
+    for (const line of lines) {
+        const parts = line.split(/\t| {2,}/).map(p => p.trim()).filter(p => p.length > 0);
+        if (parts.length < 2) continue;
+
+        let namePart, roiPart;
+        if (parts.length >= 3 && !isNaN(parseFloat(parts[parts.length-1].replace(/,/g, '.')))) {
+            namePart = parts[1];
+            roiPart = parts[2];
+        } else if (parts.length >= 2) {
+            roiPart = parts[parts.length-1];
+            namePart = parts.slice(1, parts.length-1).join(' ');
+            if (!namePart) namePart = parts[0];
+        }
+
+        const roiNum = parseFloat(String(roiPart || '').replace(/,/g, '.').replace(/[^0-9.+-]/g, ''));
+        if (isNaN(roiNum)) continue;
+
+        let id = null;
+        const idMatch = (namePart || '').match(/Unternehmen\s*(\d+)/i) || (namePart || '').match(/^(\d+)\b/);
+        if (idMatch) id = idMatch[1];
+        else {
+            const anyNum = (namePart || '').match(/(\d+)/);
+            if (anyNum) id = anyNum[1];
+        }
+        if (!id) continue;
+
+        entries.push({ id: String(id), name: namePart || '', roi: roiNum });
+    }
+    return entries;
+}
+
+let uploadedText = null;
+
+function berechneRanking() {
+    const allData = {};
+
+    // Prüfe, ob Felder Inhalte haben, während Upload vorliegt
+    const anyFieldFilled = Array.from({length:7},(_,i)=>start+i).some(y => document.getElementById('year'+y).value.trim() !== '');
+    const warningDiv = document.getElementById('uploadWarning');
+    warningDiv.innerText = '';
+
+    if (uploadedText) {
+        if (anyFieldFilled) {
+            warningDiv.innerText = 'Hinweis: Inhalte der Textfelder werden ignoriert, da eine TXT-Datei hochgeladen wurde.';
+        }
+        const parsed = parseRanking(uploadedText);
+        parsed.forEach(e => {
+            if (!allData[e.id]) allData[e.id] = { name: e.name, values: [], lastYear: 0 };
+            allData[e.id].values.push(e.roi);
+            allData[e.id].name = e.name;
+        });
+    } else {
+        for (let year = start; year <= start + 6; year++) {
+            const text = document.getElementById('year' + year).value || '';
+            if (!text.trim()) continue;
+            const parsed = parseRanking(text);
+            parsed.forEach(e => {
+                if (!allData[e.id]) allData[e.id] = { name: e.name, values: [], lastYear: year };
+                allData[e.id].values.push(e.roi);
+                if (year >= (allData[e.id].lastYear || 0)) {
+                    allData[e.id].name = e.name;
+                    allData[e.id].lastYear = year;
+                }
+            });
+        }
+    }
+
+    const tbody = document.querySelector('#resultTable tbody');
+    tbody.innerHTML = '';
+    const ids = Object.keys(allData);
+    if (ids.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="4">Keine Daten vorhanden. Füge in den Textfeldern Rankings ein oder lade eine TXT hoch und klicke auf Berechne.</td>';
+        tbody.appendChild(tr);
+        return;
+    }
+
+    const ranking = Object.entries(allData).map(([id, obj]) => {
+        const sum = obj.values.reduce((s, v) => s + v, 0);
+        const avg = sum / obj.values.length;
+        return { id, name: obj.name, avg };
+    });
+
+    ranking.sort((a, b) => b.avg - a.avg);
+
+    ranking.forEach((entry, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${entry.id}</td>
+            <td>${entry.name || ('Unternehmen ' + entry.id)}</td>
+            <td>${entry.avg.toFixed(3)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Event-Listener
+document.getElementById('calcBtn').addEventListener('click', berechneRanking);
+
+// Upload
+document.getElementById('uploadBtn').addEventListener('click', () => {
+    document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        uploadedText = e.target.result;
+        document.getElementById('uploadStatus').innerText = 'Upload erfolgreich!';
+    };
+    reader.readAsText(file, 'UTF-8');
+});
+
+// Alles löschen
+document.getElementById('clearBtn').addEventListener('click', () => {
+    uploadedText = null;
+    for (let year = start; year <= start + 6; year++) {
+        document.getElementById('year' + year).value = '';
+    }
+    document.querySelector('#resultTable tbody').innerHTML = '';
+    document.getElementById('uploadStatus').innerText = '';
+    document.getElementById('uploadWarning').innerText = '';
+});
+</script>
+</body>
+</html>

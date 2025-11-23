@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Produktions- & Personalrechner</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:24px;background:#f7fafc;color:#0f172a}
+    .card{background:#fff;padding:18px;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,0.08);max-width:920px;margin:12px auto}
+    h1{margin:0 0 12px;font-size:22px}
+    h2{font-size:16px;margin:14px 0}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    label{display:block;font-size:13px;margin-bottom:6px;color:#374151}
+    input[type="number"], input[type="text"], select{width:160px;padding:8px;border:1px solid #e6eef6;border-radius:6px}
+    .small{width:100px}
+    .kpi{background:#eef2ff;padding:10px;border-radius:8px;margin-top:8px}
+    .muted{color:#64748b;font-size:13px}
+    button{background:#0ea5a4;color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+    .suggestions{margin-top:12px;font-size:14px}
+    .calc-row{display:flex;gap:12px;align-items:center;margin-top:8px;flex-wrap:wrap}
+    .result{font-weight:700;font-size:18px}
+    .explain{background:#fff7ed;padding:10px;border-radius:8px;margin-top:12px;color:#92400e}
+    footer{font-size:12px;color:#94a3b8;margin-top:10px}
+    .error{color:#e53e3e;background:#fed7d7;padding:8px;border-radius:6px;margin-top:8px;display:none}
+    .costs-section{background:#f0f9ff;padding:12px;border-radius:8px;margin-top:12px}
+    .cost-item{display:flex;justify-content:space-between;margin:4px 0}
+    .cost-total{border-top:1px solid #cbd5e1;margin-top:8px;padding-top:8px;font-weight:bold}
+	.nav-button{background:#4f46e5;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:24px;display:inline-block;text-decoration:none}
+    @media (max-width:560px){ input[type="number"], input[type="text"], select{width:100%} .row{flex-direction:column} }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a href="index.html" class="nav-button">← Zurück zur Hauptseite</a>  
+  
+    <h1>Produktions- & Personalrechner</h1>
+    <div class="muted">Berechne Jahresproduktion und benötigte Fertigungsmitarbeiter (100% Auslastung)</div>
+
+    <h2>Starteinstellungen</h2>
+    <div class="row">
+      <div>
+        <label>Greifer (vorhanden)</label>
+        <input id="startGreifer" type="number" min="0" step="1" value="100" />
+      </div>
+
+      <div>
+        <label>Luftdüse (vorhanden)</label>
+        <input id="startLuft" type="number" min="0" step="1" value="0" />
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <div>
+        <label>Investition (Luftdüsen gekauft)</label>
+        <input id="investLuft" type="number" min="0" step="1" value="0" />
+      </div>
+
+      <div>
+        <label>Desinvestition (Greifer verkauft)</label>
+        <input id="desinvGreif" type="number" min="0" step="1" value="0" />
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <div>
+        <label>Preis pro Meter (€ / m)</label>
+        <input id="pricePerMeter" type="number" min="0" step="0.01" value="3.50" />
+      </div>
+    </div>
+
+    <div id="errorMessage" class="error"></div>
+
+    <div class="calc-row">
+      <button id="calcBtn">Berechnen</button>
+      <button id="resetBtn" style="background:#64748b">Zurücksetzen</button>
+    </div>
+
+    <div id="results" class="kpi" style="display:none; margin-top:16px">
+      <div><span class="result" id="totalMachines">-</span> <span class="muted">Maschinen insgesamt</span></div>
+      <div style="margin-top:8px">
+        <div><strong>Jahresproduktion (m)</strong></div>
+        <div class="muted">Greifer produziert <span id="prodGreifPerYear">-</span> m/Jahr pro Maschine. Luftdüse: <span id="prodLuftPerYear">-</span> m/Jahr pro Maschine.</div>
+        <div style="margin-top:6px"><span class="result" id="totalProduction">-</span> / Jahr (gesamt)</div>
+      </div>
+
+      <div style="margin-top:10px">
+        <div><strong>Benötigte Fertigungsmitarbeiter (100% Auslastung)</strong></div>
+        <div class="muted">Greifer: <span id="staffGreif">-</span> | Luftdüse: <span id="staffLuft">-</span></div>
+        <div style="margin-top:6px"><span class="result" id="totalStaff">-</span> (Achtung, nach der Fluktuation)</div>
+      </div>
+
+      <div class="costs-section">
+        <div><strong>Kosten- & Ertragsberechnung</strong></div>
+        
+        <div style="margin-top:8px">
+          <div><strong>Investitionskosten (Luftdüsen)</strong></div>
+          <div class="cost-item">
+            <span>Anschaffungskosten:</span>
+            <span id="investCosts">- €</span>
+          </div>
+        </div>
+
+        <div style="margin-top:8px">
+          <div><strong>Desinvestition (Greifer)</strong></div>
+          <div class="cost-item">
+            <span>Verkaufserlös:</span>
+            <span id="desinvRevenue">- €</span>
+          </div>
+        </div>
+
+        <div style="margin-top:8px">
+          <div><strong>Direkte Personalkosten Fertigung</strong></div>
+          <div class="cost-item">
+            <span>Jährliche Lohnkosten:</span>
+            <span id="staffCosts">- €</span>
+          </div>
+          <div class="cost-item">
+            <span>Freiwillige Sozialleistungen: (bei 5%)</span>
+            <span id="socialCosts">- €</span>
+          </div>
+          <div class="cost-total">
+            <span>Gesamt Personalkosten:</span>
+            <span id="totalStaffCosts">- €</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="theoreticalRevenue" style="margin-top:10px; color:red; font-weight:700"></div>
+
+      <div style="margin-top:12px" id="breakdown" class="muted"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // feste Parameter aus Handbuch / Vorgaben
+    const PERF = {
+      greifer_m_per_h: 7.5,
+      luft_m_per_h: 12.0
+    };
+
+    const FIXED_PARAMS = {
+      hoursPerDay: 24,
+      daysPerYear: 225,
+      uptimePerc: 100,
+      staffPerGreif: 0.7,
+      staffPerLuft: 0.5,
+      greiferPrice: 50000,
+      luftPrice: 60000,
+      depreciationYears: 10,
+      machineAge: 3,
+      salaryPerEmployee: 30500,
+      socialPercent: 5,
+      saleRevenuePercent: 30
+    };
+
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+    }
+
+    function hideError() {
+      document.getElementById('errorMessage').style.display = 'none';
+    }
+
+    function calc() {
+      hideError();
+
+      const startGreifer = Math.max(0, Math.floor(Number(document.getElementById('startGreifer').value) || 0));
+      const startLuft = Math.max(0, Math.floor(Number(document.getElementById('startLuft').value) || 0));
+      const investLuft = Math.max(0, Math.floor(Number(document.getElementById('investLuft').value) || 0));
+      const desinvGreif = Math.max(0, Math.floor(Number(document.getElementById('desinvGreif').value) || 0));
+      const pricePerMeter = parseFloat(document.getElementById('pricePerMeter').value) || 0;
+
+      if (desinvGreif > startGreifer + startLuft) {
+        showError(`Fehler: Sie können nicht mehr Maschinen (${desinvGreif}) verkaufen als insgesamt vorhanden sind (${startGreifer + startLuft}).`);
+        return;
+      }
+
+      let finalGreifer = startGreifer;
+      let finalLuft = startLuft + investLuft;
+      if (desinvGreif <= startGreifer) finalGreifer -= desinvGreif;
+      else {
+        const luftToSell = desinvGreif - startGreifer;
+        finalGreifer = 0;
+        finalLuft = Math.max(0, startLuft - luftToSell + investLuft);
+      }
+
+      const uptimeFactor = FIXED_PARAMS.uptimePerc / 100.0;
+      const prodPerGreifer = PERF.greifer_m_per_h * FIXED_PARAMS.hoursPerDay * FIXED_PARAMS.daysPerYear * uptimeFactor;
+      const prodPerLuft = PERF.luft_m_per_h * FIXED_PARAMS.hoursPerDay * FIXED_PARAMS.daysPerYear * uptimeFactor;
+      const totalProduction = Math.round((finalGreifer * prodPerGreifer + finalLuft * prodPerLuft) * 100) / 100;
+
+      const staffGreif = Math.round(finalGreifer * FIXED_PARAMS.staffPerGreif * 100) / 100;
+      const staffLuft = Math.round(finalLuft * FIXED_PARAMS.staffPerLuft * 100) / 100;
+      const totalStaff = Math.round((staffGreif + staffLuft) * 100) / 100;
+
+      const investCosts = investLuft * FIXED_PARAMS.luftPrice;
+      const remainingYears = FIXED_PARAMS.depreciationYears - FIXED_PARAMS.machineAge;
+      const annualDepreciationGreifer = FIXED_PARAMS.greiferPrice / FIXED_PARAMS.depreciationYears;
+      const remainingBookValue = FIXED_PARAMS.greiferPrice - (FIXED_PARAMS.machineAge * annualDepreciationGreifer);
+      const desinvRevenue = desinvGreif * remainingBookValue * (FIXED_PARAMS.saleRevenuePercent / 100);
+
+      const staffCosts = totalStaff * FIXED_PARAMS.salaryPerEmployee;
+      const socialCosts = staffCosts * (FIXED_PARAMS.socialPercent / 100);
+      const totalStaffCosts = staffCosts + socialCosts;
+
+      // Theoretischer Umsatz
+      const theoreticalRevenue = Math.round(totalProduction * pricePerMeter * 100) / 100;
+
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('totalMachines').textContent = `${totalMachinesStr(finalGreifer, finalLuft)}`;
+      document.getElementById('prodGreifPerYear').textContent = `${numberWithSep(prodPerGreifer)} m/Jahr`;
+      document.getElementById('prodLuftPerYear').textContent = `${numberWithSep(prodPerLuft)} m/Jahr`;
+      document.getElementById('totalProduction').textContent = `${numberWithSep(totalProduction)} m`;
+      document.getElementById('staffGreif').textContent = `${staffGreif}`;
+      document.getElementById('staffLuft').textContent = `${staffLuft}`;
+      document.getElementById('totalStaff').textContent = `${totalStaff}`;
+
+      document.getElementById('investCosts').textContent = `${numberWithSep(investCosts)} €`;
+      document.getElementById('desinvRevenue').textContent = `${numberWithSep(desinvRevenue)} €`;
+      document.getElementById('staffCosts').textContent = `${numberWithSep(staffCosts)} €`;
+      document.getElementById('socialCosts').textContent = `${numberWithSep(socialCosts)} €`;
+      document.getElementById('totalStaffCosts').textContent = `${numberWithSep(totalStaffCosts)} €`;
+
+      document.getElementById('theoreticalRevenue').textContent = `Theoretischer Umsatz (bei voller Nachfrage): ${numberWithSep(theoreticalRevenue)} €`;
+
+    }
+
+    function numberWithSep(x){
+      if (x === null || x === undefined || isNaN(x)) return '-';
+      return x.toLocaleString('de-DE', {maximumFractionDigits:2});
+    }
+
+    function totalMachinesStr(greif, luft){ return `${greif + luft} (Greifer ${greif} + Luftdüse ${luft})`; }
+
+    document.getElementById('calcBtn').addEventListener('click', calc);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      document.getElementById('startGreifer').value = 100;
+      document.getElementById('startLuft').value = 0;
+      document.getElementById('investLuft').value = 0;
+      document.getElementById('desinvGreif').value = 0;
+      document.getElementById('pricePerMeter').value = 3.50;
+      document.getElementById('results').style.display = 'none';
+      hideError();
+    });
+  </script>
+</body>
+</html>
