@@ -89,6 +89,14 @@
         <div style="margin-top:6px"><span class="result" id="totalStaff">-</span> (Achtung, nach der Fluktuation)</div>
       </div>
 
+      <div style="margin-top:12px">
+        <div><strong>Benötigte Verwaltungsmitarbeiter</strong></div>
+        <div class="muted">
+          Verwaltungskosten = 5% vom Umsatz → 90% Gehaltskosten → 35.000 € pro Mitarbeiter
+        </div>
+        <div style="margin-top:6px"><span class="result" id="adminStaff">-</span></div>
+      </div>
+
       <div class="costs-section">
         <div><strong>Kosten- & Ertragsberechnung</strong></div>
         
@@ -133,7 +141,7 @@
   </div>
 
   <script>
-    // feste Parameter aus Handbuch / Vorgaben
+
     const PERF = {
       greifer_m_per_h: 7.5,
       luft_m_per_h: 12.0
@@ -209,6 +217,10 @@
       // Theoretischer Umsatz
       const theoreticalRevenue = Math.round(totalProduction * pricePerMeter * 100) / 100;
 
+      const adminCostTotal = theoreticalRevenue * 0.05;      // 5% Verwaltungskosten
+      const adminSalaryCosts = adminCostTotal * 0.90;        // davon 90% Gehaltskosten
+      const adminStaff = Math.floor(adminSalaryCosts / 35000); // abrunden
+
       document.getElementById('results').style.display = 'block';
       document.getElementById('totalMachines').textContent = `${totalMachinesStr(finalGreifer, finalLuft)}`;
       document.getElementById('prodGreifPerYear').textContent = `${numberWithSep(prodPerGreifer)} m/Jahr`;
@@ -225,6 +237,9 @@
       document.getElementById('totalStaffCosts').textContent = `${numberWithSep(totalStaffCosts)} €`;
 
       document.getElementById('theoreticalRevenue').textContent = `Theoretischer Umsatz (bei voller Nachfrage): ${numberWithSep(theoreticalRevenue)} €`;
+
+      document.getElementById('adminStaff').textContent = `${adminStaff} Mitarbeiter`;
+
 
     }
 
