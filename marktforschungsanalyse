@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Marktforschungsbericht Analyse</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 20px;
+            padding-bottom: 40px;
+        }
+        h1 { text-align: center; }
+        
+        .nav-button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-bottom: 12px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .input-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 80px;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        
+        .button-group {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            margin: 0 5px;
+        }
+        
+        .analyze-button {
+            background-color: #1d4ed8;
+        }
+        
+        .clear-button {
+            background-color: #ef4444;
+        }
+        
+        .note {
+            font-size: 13px;
+            color: #555;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        
+        #chart {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.08);
+            margin-top: 20px;
+            min-height: 600px;
+        }
+        
+        .error-message {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .success-message {
+            background: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        #chartCanvas {
+            border: 1px solid #e0e0e0;
+            cursor: crosshair;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .legend-item {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .stats-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        
+        .stats-table th,
+        .stats-table td {
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            text-align: left;
+        }
+        
+        .stats-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+
+        th {
+            position: relative;
+            padding-right: 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th::after {
+            content: '▲';
+            position: absolute;
+            right: 8px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        th.sort-asc::after {
+            content: '▲';
+            color: #1d4ed8;
+        }
+
+        th.sort-desc::after {
+            content: '▼';
+            color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Marktforschungsbericht-Analyse</h1>
+        
+        <a href="index.html" class="nav-button">← Zurück zur Hauptseite</a>
+        
+        <div class="input-section">
+            <h2>Daten eingeben</h2>
+            
+            <div class="input-group">
+                <label for="marketData">Marktforschungsbericht:</label>
+                <textarea id="marketData" placeholder="Marktforschungsbericht hier einfügen (mit oder ohne Überschrift)..."></textarea>
+                <div class="note">Format: einfach Text kopieren und einfügen</div>
+            </div>
+            
+            <div class="input-group">
+                <label for="roiData">ROI Ranking des Jahres:</label>
+                <textarea id="roiData" placeholder="ROI Ranking hier einfügen (mit oder ohne Überschrift)..."></textarea>
+                <div class="note">Format: einfach Text kopieren und einfügen</div>
+            </div>
+            
+            <div id="messageArea"></div>
+            
+            <div class="button-group">
+                <button class="analyze-button" onclick="analyzeData()">📈 Analysieren</button>
+                <button class="clear-button" onclick="clearAll()">🗑️ Alles löschen</button>
+            </div>
+        </div>
+        
+        <div id="chart" style="display: none;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <label style="margin-right: 10px; font-weight: bold;">X-Achse:</label>
+                <select id="xAxis" onchange="drawChart()" style="padding: 8px; font-size: 14px; margin-right: 30px;">
+                    <option value="price">Preis (€)</option>
+                    <option value="sales">Absatz (Mio. m)</option>
+                    <option value="revenue">Umsatz (Mio. €)</option>
+                    <option value="marketShare">Marktanteil (%)</option>
+                    <option value="quality">Qualität</option>
+                    <option value="roi">ROI</option>
+                </select>
+
+                <label style="margin-right: 10px; font-weight: bold;">Y-Achse:</label>
+                <select id="yAxis" onchange="drawChart()" style="padding: 8px; font-size: 14px; margin-right: 30px;">
+                    <option value="price">Preis (€)</option>
+                    <option value="sales" selected>Absatz (Mio. m)</option>
+                    <option value="revenue">Umsatz (Mio. €)</option>
+                    <option value="marketShare">Marktanteil (%)</option>
+                    <option value="quality">Qualität</option>
+                    <option value="roi">ROI</option>
+                </select>
+
+                <label style="margin-right: 10px; font-weight: bold;">Punktgröße:</label>
+                <select id="dotSize" onchange="drawChart()" style="padding: 8px; font-size: 14px;">
+                    <option value="roi">ROI</option>
+                    <option value="price">Preis</option>
+                    <option value="sales">Absatz</option>
+                    <option value="revenue">Umsatz</option>
+                    <option value="marketShare">Marktanteil</option>
+                    <option value="quality">Qualität</option>
+                    <option value="none">Keine / Einheitlich</option>
+                </select>
+            </div>
+            
+            <h2 id="chartTitle">Scatterplot: Preis vs. Absatz (Größe = ROI)</h2>
+            <canvas id="chartCanvas" width="1200" height="700"></canvas>
+            <div class="legend">
+                <strong>Legende:</strong>
+                <div class="legend-item"> Punktgröße = ROI (je größer, desto höher der ROI)</div>
+                <div class="legend-item"> Hover über Punkte für Details</div>
+            </div>
+            
+            <h3>Datenübersicht</h3>
+            <table class="stats-table" id="statsTable">
+                <thead>
+                    <tr>
+                        <th>Unternehmen</th>
+                        <th>Preis (€)</th>
+                        <th>Umsatz (Mio. €)</th>
+                        <th>ROI</th>
+                        <th>Absatz (Mio. m)</th>
+                        <th>Qualität</th>
+                    </tr>
+                </thead>
+                <tbody id="statsBody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        let currentData = [];
+        let drawnPoints = [];
+        
+        function showMessage(text, isError = false) {
+            const area = document.getElementById('messageArea');
+            area.innerHTML = `<div class="${isError ? 'error-message' : 'success-message'}">${text}</div>`;
+        }
+        
+        function extractCompanyId(text) {
+            const match = text.match(/Unternehmen\s*(\d+)/i);
+            if (match) return match[1];
+            
+            const numMatch = text.match(/^(\d+)\b/);
+            if (numMatch) return numMatch[1];
+            
+            const anyNum = text.match(/(\d+)/);
+            if (anyNum) return anyNum[1];
+            
+            return null;
+        }
+        
+        function parseMarketData(text) {
+            if (!text.trim()) return [];
+            
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return [];
+            
+            let startIndex = 0;
+            if (/geschäfts.*jahr.*unterneh.*preis/i.test(lines[0])) {
+                startIndex = 1;
+            }
+            
+            const data = [];
+            for (let i = startIndex; i < lines.length; i++) {
+                const line = lines[i];
+                const parts = line.split(/\t/).map(p => p.trim()).filter(p => p.length > 0);
+                
+                if (parts.length < 6) continue;
+                
+                let year = parts[0];
+                let companyText = parts[1];
+                let price = parseFloat(parts[2].replace(/,/g, '.'));
+                let sales = parseFloat(parts[3].replace(/,/g, '.'));
+                let marketShare = parseFloat(parts[4].replace(/,/g, '.'));
+                let revenue = parseFloat(parts[5].replace(/,/g, '.'));
+                let quality = parts[6] ? parseFloat(parts[6].replace(/,/g, '.')) : null;
+                
+                if (!year.match(/\d{4}/) && data.length > 0) {
+                    year = data[data.length - 1].year;
+                    companyText = parts[0];
+                    price = parseFloat(parts[1].replace(/,/g, '.'));
+                    sales = parseFloat(parts[2].replace(/,/g, '.'));
+                    marketShare = parseFloat(parts[3].replace(/,/g, '.'));
+                    revenue = parseFloat(parts[4].replace(/,/g, '.'));
+                    quality = parts[5] ? parseFloat(parts[5].replace(/,/g, '.')) : null;
+                }
+                
+                const companyId = extractCompanyId(companyText);
+                if (!companyId) continue;
+                
+                if (isNaN(price) || isNaN(revenue)) continue;
+                
+                data.push({
+                    year,
+                    companyId,
+                    companyName: companyText,
+                    price,
+                    sales,
+                    marketShare,
+                    revenue,
+                    quality
+                });
+            }
+            
+            return data;
+        }
+        
+        function parseROIData(text) {
+            if (!text.trim()) return {};
+            
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return {};
+            
+            let startIndex = 0;
+            if (/rang.*firma.*roi/i.test(lines[0])) {
+                startIndex = 1;
+            }
+            
+            const roiMap = {};
+            for (let i = startIndex; i < lines.length; i++) {
+                const line = lines[i];
+                const parts = line.split(/\t/).map(p => p.trim()).filter(p => p.length > 0);
+                
+                if (parts.length < 3) continue;
+                
+                const companyText = parts[1];
+                const roi = parseFloat(parts[2].replace(/,/g, '.'));
+                
+                const companyId = extractCompanyId(companyText);
+                if (!companyId || isNaN(roi)) continue;
+                
+                roiMap[companyId] = {
+                    roi,
+                    name: companyText
+                };
+            }
+            
+            return roiMap;
+        }
+        
+        function analyzeData() {
+            const marketText = document.getElementById('marketData').value;
+            const roiText = document.getElementById('roiData').value;
+            
+            if (!marketText.trim()) {
+                showMessage('Bitte mindestens Marktforschungsbericht ausfüllen!', true);
+                return;
+            }
+            
+            const marketData = parseMarketData(marketText);
+            const roiData = roiText.trim() ? parseROIData(roiText) : {};
+            
+            if (marketData.length === 0) {
+                showMessage('Keine gültigen Marktdaten gefunden!', true);
+                return;
+            }
+            
+            const hasROI = Object.keys(roiData).length > 0;
+            
+            currentData = marketData.map(item => ({
+                ...item,
+                roi: roiData[item.companyId]?.roi || 0,
+                hasROI: !!roiData[item.companyId],
+                fullName: roiData[item.companyId]?.name || item.companyName
+            }));
+            
+            const roiInfo = hasROI ? ' (mit ROI-Daten)' : ' (ohne ROI-Daten - einheitliche Punktgröße)';
+            showMessage(`✓ ${currentData.length} Unternehmen erfolgreich analysiert!${roiInfo}`, false);
+            
+            document.getElementById('chart').style.display = 'block';
+            drawChart();
+            updateStatsTable();
+        }
+        
+        function drawChart() {
+            const canvas = document.getElementById('chartCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+            if (currentData.length === 0) return;
+
+            const xAxisVar = document.getElementById('xAxis').value;
+            const yAxisVar = document.getElementById('yAxis').value;
+            const dotSizeVar = document.getElementById('dotSize').value;
+
+            const axisLabels = {
+                price: 'Preis (€)',
+                sales: 'Absatz (Mio. m)',
+                revenue: 'Umsatz (Mio. €)',
+                marketShare: 'Marktanteil (%)',
+                quality: 'Qualität',
+                roi: 'ROI'
+            };
+
+            const sizeText = dotSizeVar === "none" ? " (Größe = konstant)" :
+                             ` (Größe = ${axisLabels[dotSizeVar]})`;
+            document.getElementById('chartTitle').textContent =
+                `Scatterplot: ${axisLabels[xAxisVar]} vs. ${axisLabels[yAxisVar]}${sizeText}`;
+
+            const xValues = currentData.map(d => d[xAxisVar]);
+            const yValues = currentData.map(d => d[yAxisVar]);
+            const sizeValues = currentData.map(d => d[dotSizeVar]);
+
+            const minX = Math.min(...xValues) * 0.9;
+            const maxX = Math.max(...xValues) * 1.1;
+            const minY = Math.min(...yValues) * 0.9;
+            const maxY = Math.max(...yValues) * 1.1;
+
+            const minSize = Math.min(...sizeValues);
+            const maxSize = Math.max(...sizeValues);
+
+            const padding = 80;
+            const chartWidth = width - 2 * padding;
+            const chartHeight = height - 2 * padding;
+
+            // Achsen
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+
+            // X-Achsen-Markierungen
+            ctx.fillStyle = '#666';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'center';
+            for (let i = 0; i <= 5; i++) {
+                const xVal = minX + (maxX - minX) * (i / 5);
+                const xPos = padding + chartWidth * (i / 5);
+                
+                ctx.beginPath();
+                ctx.moveTo(xPos, height - padding);
+                ctx.lineTo(xPos, height - padding + 5);
+                ctx.stroke();
+                
+                ctx.fillText(xVal.toFixed(1), xPos, height - padding + 20);
+            }
+
+            // Y-Achsen-Markierungen
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const yVal = minY + (maxY - minY) * (i / 5);
+                const yPos = height - padding - chartHeight * (i / 5);
+                
+                ctx.beginPath();
+                ctx.moveTo(padding - 5, yPos);
+                ctx.lineTo(padding, yPos);
+                ctx.stroke();
+                
+                ctx.fillText(yVal.toFixed(1), padding - 10, yPos + 4);
+            }
+
+            // Labels
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(axisLabels[xAxisVar], width / 2, height - 20);
+
+            ctx.save();
+            ctx.translate(20, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(axisLabels[yAxisVar], 0, 0);
+            ctx.restore();
+
+            drawnPoints = [];
+
+            currentData.forEach(item => {
+                const x = padding + ((item[xAxisVar] - minX) / (maxX - minX)) * chartWidth;
+                const y = height - padding - ((item[yAxisVar] - minY) / (maxY - minY)) * chartHeight;
+
+                let radius = 8;
+                if (dotSizeVar !== "none") {
+                    if (maxSize !== minSize) {
+                        radius = 4 + ((item[dotSizeVar] - minSize) / (maxSize - minSize)) * 15;
+                    }
+                }
+
+                let color = 'rgba(99, 102, 241, 0.7)';
+                if (dotSizeVar !== "none" && item.roi !== undefined) {
+                    if (item.roi > 5) color = 'rgba(34, 197, 94, 0.7)';
+                    else if (item.roi > 3) color = 'rgba(59, 130, 246, 0.7)';
+                    else if (item.roi > 0) color = 'rgba(251, 191, 36, 0.7)';
+                    else color = 'rgba(239, 68, 68, 0.7)';
+                }
+
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color.replace('0.7', '1');
+                ctx.lineWidth = 2;
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(item.companyId, x, y + radius + 12);
+
+                drawnPoints.push({ item, x, y, radius });
+            });
+
+            canvas.onmousemove = function (e) {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+
+                let found = null;
+                for (const p of drawnPoints) {
+                    const d = Math.sqrt((mx - p.x) ** 2 + (my - p.y) ** 2);
+                    if (d <= p.radius) {
+                        found = p.item;
+                        break;
+                    }
+                }
+
+                canvas.title = found ? 
+                    `${found.fullName}\nPreis: ${found.price.toFixed(2)} €\nUmsatz: ${found.revenue.toFixed(2)} Mio €\nROI: ${found.roi.toFixed(3)}\nAbsatz: ${found.sales.toFixed(3)} Mio m\nQualität: ${found.quality ?? "N/A"}`
+                    : "";
+            };
+        }
+        
+        function updateStatsTable() {
+            const tbody = document.getElementById('statsBody');
+            tbody.innerHTML = '';
+        
+            const sorted = [...currentData].sort((a, b) => b.roi - a.roi);
+        
+            sorted.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.fullName}</td>
+                    <td>${item.price.toFixed(2)}</td>
+                    <td>${item.revenue.toFixed(2)}</td>
+                    <td style="font-weight: bold; color: ${item.roi > 0 ? 'green' : 'red'}">${item.roi.toFixed(3)}</td>
+                    <td>${item.sales.toFixed(3)}</td>
+                    <td>${item.quality !== null ? item.quality.toFixed(2) : 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function clearAll() {
+            document.getElementById('marketData').value = '';
+            document.getElementById('roiData').value = '';
+            document.getElementById('messageArea').innerHTML = '';
+            document.getElementById('chart').style.display = 'none';
+            currentData = [];
+        }
+
+        function extractNumber(str) {
+            const match = str.match(/\d+/);
+            return match ? parseInt(match[0], 10) : null;
+        }
+
+        function sortTableByColumn(tableId, columnIndex) {
+            const table = document.getElementById(tableId);
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+
+            const th = table.tHead.rows[0].cells[columnIndex];
+            const currentDir = th.classList.contains('sort-asc') ? 'asc' :
+                               th.classList.contains('sort-desc') ? 'desc' : '';
+            const asc = currentDir !== 'asc';
+
+            rows.sort((a, b) => {
+                const cellA = a.cells[columnIndex].textContent.trim();
+                const cellB = b.cells[columnIndex].textContent.trim();
+
+                const numA = parseFloat(cellA.replace(',', '.'));
+                const numB = parseFloat(cellB.replace(',', '.'));
+
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return asc ? numA - numB : numB - numA;
+                }
+
+                if (cellA.toLowerCase().includes('unternehmen') && cellB.toLowerCase().includes('unternehmen')) {
+                    const numA = extractNumber(cellA);
+                    const numB = extractNumber(cellB);
+                    if (numA !== null && numB !== null) {
+                        return asc ? numA - numB : numB - numA;
+                    }
+                }
+
+                return asc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+
+            Array.from(table.tHead.rows[0].cells).forEach(cell => {
+                cell.classList.remove('sort-asc', 'sort-desc');
+                cell.style.color = '#000';
+            });
+            th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+            th.style.color = '#1d4ed8';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const table = document.getElementById('statsTable');
+            Array.from(table.tHead.rows[0].cells).forEach((th, index) => {
+                th.addEventListener('click', () => sortTableByColumn('statsTable', index));
+            });
+        });
+    </script>
+</body>
+</html>
