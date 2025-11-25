@@ -576,7 +576,12 @@
                 let radius = 8;
                 if (dotSizeVar !== "none") {
                     if (maxSize !== minSize) {
-                        radius = 4 + ((item[dotSizeVar] - minSize) / (maxSize - minSize)) * 15;
+                        // Bei Qualität: niedriger Wert = besser, also Größe umkehren
+                        if (dotSizeVar === "quality") {
+                            radius = 4 + ((maxSize - item[dotSizeVar]) / (maxSize - minSize)) * 15;
+                        } else {
+                            radius = 4 + ((item[dotSizeVar] - minSize) / (maxSize - minSize)) * 15;
+                        }
                     }
                 }
 
