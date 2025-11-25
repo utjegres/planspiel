@@ -467,6 +467,53 @@
             const chartWidth = width - 2 * padding;
             const chartHeight = height - 2 * padding;
 
+            // Funktion um schöne runde Zahlen zu erzeugen
+            function getRoundedTicks(min, max, count = 10) {
+                const range = max - min;
+                const roughStep = range / (count - 1);
+                
+                // Finde passende Schrittweite (0.5, 1, 2, 5, 10, etc.)
+                const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+                const normalized = roughStep / magnitude;
+                let step;
+                if (normalized < 1.5) step = 0.5 * magnitude;
+                else if (normalized < 3) step = 1 * magnitude;
+                else if (normalized < 7) step = 2 * magnitude;
+                else step = 5 * magnitude;
+                
+                // Starte bei einer runden Zahl
+                const startVal = Math.floor(min / step) * step;
+                const ticks = [];
+                for (let val = startVal; val <= max + step * 0.01; val += step) {
+                    if (val >= min - step * 0.01) {
+                        ticks.push(val);
+                    }
+                }
+                return ticks;
+            }
+
+            // Gitterlinien zeichnen (zuerst, damit sie hinter den Achsen sind)
+            const xTicks = getRoundedTicks(minX, maxX, 10);
+            const yTicks = getRoundedTicks(minY, maxY, 10);
+            
+            ctx.strokeStyle = '#e5e5e5';
+            ctx.lineWidth = 1;
+            xTicks.forEach(xVal => {
+                const xPos = padding + ((xVal - minX) / (maxX - minX)) * chartWidth;
+                ctx.beginPath();
+                ctx.moveTo(xPos, padding);
+                ctx.lineTo(xPos, height - padding);
+                ctx.stroke();
+            });
+            
+            yTicks.forEach(yVal => {
+                const yPos = height - padding - ((yVal - minY) / (maxY - minY)) * chartHeight;
+                ctx.beginPath();
+                ctx.moveTo(padding, yPos);
+                ctx.lineTo(width - padding, yPos);
+                ctx.stroke();
+            });
+
             // Achsen
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 2;
@@ -480,31 +527,33 @@
             ctx.fillStyle = '#666';
             ctx.font = '11px Arial';
             ctx.textAlign = 'center';
-            for (let i = 0; i <= 5; i++) {
-                const xVal = minX + (maxX - minX) * (i / 5);
-                const xPos = padding + chartWidth * (i / 5);
+            xTicks.forEach(xVal => {
+                const xPos = padding + ((xVal - minX) / (maxX - minX)) * chartWidth;
                 
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(xPos, height - padding);
                 ctx.lineTo(xPos, height - padding + 5);
                 ctx.stroke();
                 
                 ctx.fillText(xVal.toFixed(1), xPos, height - padding + 20);
-            }
+            });
 
             // Y-Achsen-Markierungen
             ctx.textAlign = 'right';
-            for (let i = 0; i <= 5; i++) {
-                const yVal = minY + (maxY - minY) * (i / 5);
-                const yPos = height - padding - chartHeight * (i / 5);
+            yTicks.forEach(yVal => {
+                const yPos = height - padding - ((yVal - minY) / (maxY - minY)) * chartHeight;
                 
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(padding - 5, yPos);
                 ctx.lineTo(padding, yPos);
                 ctx.stroke();
                 
                 ctx.fillText(yVal.toFixed(1), padding - 10, yPos + 4);
-            }
+            });
 
             // Labels
             ctx.fillStyle = '#333';
