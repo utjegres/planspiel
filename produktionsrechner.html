@@ -26,7 +26,20 @@
     .cost-item{display:flex;justify-content:space-between;margin:4px 0}
     .cost-total{border-top:1px solid #cbd5e1;margin-top:8px;padding-top:8px;font-weight:bold}
 	.nav-button{background:#4f46e5;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:24px;display:inline-block;text-decoration:none}
-    @media (max-width:560px){ input[type="number"], input[type="text"], select{width:100%} .row{flex-direction:column} }
+    
+    /* Neue Styles für die verbesserte Anordnung */
+    .result-row{display:flex;justify-content:space-between;align-items:center;margin:6px 0}
+    .result-label{font-weight:600;color:#374151}
+    .result-value{font-weight:700;font-size:18px;color:#0f172a}
+    .sub-result-row{display:flex;justify-content:space-between;align-items:center;margin:4px 0 4px 12px}
+    .sub-result-label{font-size:13px;color:#64748b}
+    .sub-result-value{font-size:14px;color:#475569}
+    
+    @media (max-width:560px){ 
+      input[type="number"], input[type="text"], select{width:100%} 
+      .row{flex-direction:column} 
+      .result-row, .sub-result-row{flex-direction:column;align-items:flex-start;gap:4px}
+    }
   </style>
 </head>
 <body>
@@ -76,48 +89,74 @@
     </div>
 
     <div id="results" class="kpi" style="display:none; margin-top:16px">
-      <div><span class="result" id="totalMachines">-</span> <span class="muted">Maschinen insgesamt</span></div>
-      <div style="margin-top:8px">
-        <div><strong>Jahresproduktion (m)</strong></div>
-        <div class="muted">Greifer produziert <span id="prodGreifPerYear">-</span> m/Jahr pro Maschine. Luftdüse: <span id="prodLuftPerYear">-</span> m/Jahr pro Maschine.</div>
-        <div style="margin-top:6px"><span class="result" id="totalProduction">-</span> / Jahr (gesamt)</div>
+      <!-- Maschinen insgesamt - jetzt in einer Zeile -->
+      <div class="result-row">
+        <span class="result-label">Maschinen insgesamt</span>
+        <span class="result-value" id="totalMachines">-</span>
       </div>
 
-      <div style="margin-top:10px">
-        <div><strong>Benötigte Fertigungsmitarbeiter (100% Auslastung)</strong></div>
-        <div class="muted">Greifer: <span id="staffGreif">-</span> | Luftdüse: <span id="staffLuft">-</span></div>
-        <div style="margin-top:6px"><span class="result" id="totalStaff">-</span> (Achtung, nach der Fluktuation)</div>
-      </div>
-
+      <!-- Jahresproduktion Abschnitt -->
       <div style="margin-top:12px">
-        <div><strong>Benötigte Verwaltungsmitarbeiter</strong></div>
-        <div class="muted">
-          Verwaltungskosten = 5% vom Umsatz → 90% Gehaltskosten → 35.000 € pro Mitarbeiter
+        <div style="font-weight:bold; margin-bottom:6px">Jahresproduktion (m)</div>
+        <div class="muted" style="margin-bottom:8px">
+          Greifer produziert <span id="prodGreifPerYear">-</span> m/Jahr pro Maschine. 
+          Luftdüse: <span id="prodLuftPerYear">-</span> m/Jahr pro Maschine.
         </div>
-        <div style="margin-top:6px"><span class="result" id="adminStaff">-</span></div>
+        <div class="result-row">
+          <span class="result-label">Gesamtproduktion pro Jahr</span>
+          <span class="result-value" id="totalProduction">-</span>
+        </div>
+      </div>
+
+      <!-- Fertigungsmitarbeiter Abschnitt -->
+      <div style="margin-top:12px">
+        <div style="font-weight:bold; margin-bottom:6px">Benötigte Fertigungsmitarbeiter (100% Auslastung)</div>
+        <div class="muted" style="margin-bottom:8px">
+          Greifer: <span id="staffGreif">-</span> | Luftdüse: <span id="staffLuft">-</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Gesamt Fertigungsmitarbeiter</span>
+          <span class="result-value" id="totalStaff">-</span>
+        </div>
+        <div class="muted" style="font-size:12px; margin-top:4px">(Achtung, nach der Fluktuation)</div>
+      </div>
+
+      <!-- Verwaltungsmitarbeiter Abschnitt -->
+      <div style="margin-top:12px">
+        <div style="font-weight:bold; margin-bottom:6px">Benötigte Verwaltungsmitarbeiter</div>
+        <div class="muted" style="margin-bottom:8px">
+          Verwaltungskosten = 5% vom Umsatz → 90% Gehaltskosten → 35.500 € pro Mitarbeiter
+        </div>
+        <div class="result-row">
+          <span class="result-label">Verwaltungsmitarbeiter</span>
+          <span class="result-value" id="adminStaff">-</span>
+        </div>
       </div>
 
       <div class="costs-section">
-        <div><strong>Kosten- & Ertragsberechnung</strong></div>
+        <div style="font-weight:bold; margin-bottom:8px">Kosten- & Ertragsberechnung</div>
         
+        <!-- Investitionskosten -->
         <div style="margin-top:8px">
-          <div><strong>Investitionskosten (Luftdüsen)</strong></div>
+          <div style="font-weight:600; margin-bottom:4px">Investitionskosten (Luftdüsen)</div>
           <div class="cost-item">
             <span>Anschaffungskosten:</span>
             <span id="investCosts">- €</span>
           </div>
         </div>
 
+        <!-- Desinvestition -->
         <div style="margin-top:8px">
-          <div><strong>Desinvestition (Greifer)</strong></div>
+          <div style="font-weight:600; margin-bottom:4px">Desinvestition (Greifer)</div>
           <div class="cost-item">
             <span>Verkaufserlös:</span>
             <span id="desinvRevenue">- €</span>
           </div>
         </div>
 
+        <!-- Personalkosten -->
         <div style="margin-top:8px">
-          <div><strong>Direkte Personalkosten Fertigung</strong></div>
+          <div style="font-weight:600; margin-bottom:4px">Direkte Personalkosten Fertigung</div>
           <div class="cost-item">
             <span>Jährliche Lohnkosten:</span>
             <span id="staffCosts">- €</span>
@@ -127,13 +166,13 @@
             <span id="socialCosts">- €</span>
           </div>
           <div class="cost-total">
-            <span>Gesamt Personalkosten:</span>
+            <span>Gesamte direkte Lohnkosten:</span>
             <span id="totalStaffCosts">- €</span>
           </div>
         </div>
       </div>
 
-      <div id="theoreticalRevenue" style="margin-top:10px; color:red; font-weight:700"></div>
+      <div id="theoreticalRevenue" style="margin-top:12px; color:#dc2626; font-weight:700; text-align:center; padding:8px; background:#fef2f2; border-radius:6px"></div>
 
       <div style="margin-top:12px" id="breakdown" class="muted"></div>
     </div>
@@ -219,7 +258,7 @@
 
       const adminCostTotal = theoreticalRevenue * 0.05;      // 5% Verwaltungskosten
       const adminSalaryCosts = adminCostTotal * 0.90;        // davon 90% Gehaltskosten
-      const adminStaff = Math.floor(adminSalaryCosts / 35000); // abrunden
+      const adminStaff = Math.floor(adminSalaryCosts / 35500); // abrunden
 
       document.getElementById('results').style.display = 'block';
       document.getElementById('totalMachines').textContent = `${totalMachinesStr(finalGreifer, finalLuft)}`;
@@ -239,8 +278,6 @@
       document.getElementById('theoreticalRevenue').textContent = `Theoretischer Umsatz (bei voller Nachfrage): ${numberWithSep(theoreticalRevenue)} €`;
 
       document.getElementById('adminStaff').textContent = `${adminStaff} Mitarbeiter`;
-
-
     }
 
     function numberWithSep(x){
