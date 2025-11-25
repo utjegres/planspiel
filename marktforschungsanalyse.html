@@ -186,7 +186,10 @@
 <body>
     <div class="container">
         <h1>Marktforschungsbericht-Analyse</h1>
-        
+            <div class="input-group">
+                <div class="note">Hier kannst du den Marktbericht analysieren. Wie ist die Preisverteilung? Sieht man einen Zusammenhang zwischen Absatzmenge und Qualität? Probiere es aus. Kopiere einfach den gesamten Marktbericht in das Feld und für mehr Analyse auch das wöchentliche Ranking</div>
+            </div>
+			
         <a href="index.html" class="nav-button">← Zurück zur Hauptseite</a>
         
         <div class="input-section">
@@ -309,18 +312,24 @@
                 const line = lines[i];
                 const parts = line.split(/\t/).map(p => p.trim()).filter(p => p.length > 0);
                 
-                if (parts.length < 6) continue;
+                if (parts.length < 5) continue;
                 
-                let year = parts[0];
-                let companyText = parts[1];
-                let price = parseFloat(parts[2].replace(/,/g, '.'));
-                let sales = parseFloat(parts[3].replace(/,/g, '.'));
-                let marketShare = parseFloat(parts[4].replace(/,/g, '.'));
-                let revenue = parseFloat(parts[5].replace(/,/g, '.'));
-                let quality = parts[6] ? parseFloat(parts[6].replace(/,/g, '.')) : null;
+                // Prüfe ob erste Spalte "Jahr 200x" Format hat
+                const hasYearColumn = parts[0].match(/jahr\s+\d{4}/i);
                 
-                if (!year.match(/\d{4}/) && data.length > 0) {
-                    year = data[data.length - 1].year;
+                let companyText, price, sales, marketShare, revenue, quality;
+                
+                if (hasYearColumn) {
+                    // Format mit Jahr: Jahr 200x | 1 | 3.42 | ...
+                    if (parts.length < 6) continue;
+                    companyText = parts[1];
+                    price = parseFloat(parts[2].replace(/,/g, '.'));
+                    sales = parseFloat(parts[3].replace(/,/g, '.'));
+                    marketShare = parseFloat(parts[4].replace(/,/g, '.'));
+                    revenue = parseFloat(parts[5].replace(/,/g, '.'));
+                    quality = parts[6] ? parseFloat(parts[6].replace(/,/g, '.')) : null;
+                } else {
+                    // Format ohne Jahr: 1 | 3.42 | ...
                     companyText = parts[0];
                     price = parseFloat(parts[1].replace(/,/g, '.'));
                     sales = parseFloat(parts[2].replace(/,/g, '.'));
@@ -335,7 +344,6 @@
                 if (isNaN(price) || isNaN(revenue)) continue;
                 
                 data.push({
-                    year,
                     companyId,
                     companyName: companyText,
                     price,
